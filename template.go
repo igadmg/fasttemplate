@@ -75,7 +75,7 @@ func ExecuteFunc(template, startTag, endTag string, w io.Writer, f TagFunc) (int
 // This function is optimized for constantly changing templates.
 // Use Template.Execute for frozen templates.
 func Execute(template, startTag, endTag string, w io.Writer, m map[string]interface{}) (int64, error) {
-	return ExecuteFunc(template, startTag, endTag, w, func(w io.Writer, tag string) (int, error) { return stdTagFunc(w, tag, m) })
+	return ExecuteFunc(template, startTag, endTag, w, func(w io.Writer, tag string) (int, error) { return stdTagFunc(w, startTag, endTag, tag, m) })
 }
 
 // ExecuteStd works the same way as Execute, but keeps the unknown placeholders.
@@ -142,7 +142,7 @@ var byteBufferPool bytebufferpool.Pool
 // This function is optimized for constantly changing templates.
 // Use Template.ExecuteString for frozen templates.
 func ExecuteString(template, startTag, endTag string, m map[string]interface{}) string {
-	return ExecuteFuncString(template, startTag, endTag, func(w io.Writer, tag string) (int, error) { return stdTagFunc(w, tag, m) })
+	return ExecuteFuncString(template, startTag, endTag, func(w io.Writer, tag string) (int, error) { return stdTagFunc(w, startTag, endTag, tag, m) })
 }
 
 // ExecuteStringStd works the same way as ExecuteString, but keeps the unknown placeholders.
@@ -311,7 +311,7 @@ func (t *Template) ExecuteFunc(w io.Writer, f TagFunc) (int64, error) {
 //
 // Returns the number of bytes written to w.
 func (t *Template) Execute(w io.Writer, m map[string]interface{}) (int64, error) {
-	return t.ExecuteFunc(w, func(w io.Writer, tag string) (int, error) { return stdTagFunc(w, tag, m) })
+	return t.ExecuteFunc(w, func(w io.Writer, tag string) (int, error) { return stdTagFunc(w, t.startTag, t.endTag, tag, m) })
 }
 
 // ExecuteStd works the same way as Execute, but keeps the unknown placeholders.
@@ -373,7 +373,7 @@ func (t *Template) ExecuteFuncStringWithErr(f TagFunc) (string, error) {
 // This function is optimized for frozen templates.
 // Use ExecuteString for constantly changing templates.
 func (t *Template) ExecuteString(m map[string]interface{}) string {
-	return t.ExecuteFuncString(func(w io.Writer, tag string) (int, error) { return stdTagFunc(w, tag, m) })
+	return t.ExecuteFuncString(func(w io.Writer, tag string) (int, error) { return stdTagFunc(w, t.startTag, t.endTag, tag, m) })
 }
 
 // ExecuteStringStd works the same way as ExecuteString, but keeps the unknown placeholders.
@@ -390,10 +390,14 @@ func (t *Template) ExecuteStringStd(m map[string]interface{}) string {
 	return t.ExecuteFuncString(func(w io.Writer, tag string) (int, error) { return keepUnknownTagFunc(w, t.startTag, t.endTag, tag, m) })
 }
 
-func stdTagFunc(w io.Writer, tag string, m map[string]interface{}) (int, error) {
+func stdTagFunc(w io.Writer, startTag, endTag string, tag string, m map[string]interface{}) (int, error) {
+	if m == nil {
+		return w.Write([]byte(startTag + tag + endTag))
+	}
+
 	v := m[tag]
 	if v == nil {
-		return 0, nil
+		return w.Write([]byte(startTag + tag + endTag))
 	}
 	switch value := v.(type) {
 	case []byte:
