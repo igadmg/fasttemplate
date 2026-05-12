@@ -10,6 +10,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"strconv"
 
 	"github.com/valyala/bytebufferpool"
 )
@@ -399,6 +400,26 @@ func stdTagFunc(w io.Writer, tag string, m map[string]interface{}) (int, error) 
 		return w.Write(value)
 	case string:
 		return w.Write([]byte(value))
+	case int8:
+		return w.Write([]byte(strconv.FormatInt(int64(value), 10)))
+	case int16:
+		return w.Write([]byte(strconv.FormatInt(int64(value), 10)))
+	case int32:
+		return w.Write([]byte(strconv.FormatInt(int64(value), 10)))
+	case int64:
+		return w.Write([]byte(strconv.FormatInt(int64(value), 10)))
+	case int:
+		return w.Write([]byte(strconv.FormatInt(int64(value), 10)))
+	case uint8:
+		return w.Write([]byte(strconv.FormatUint(uint64(value), 10)))
+	case uint16:
+		return w.Write([]byte(strconv.FormatUint(uint64(value), 10)))
+	case uint32:
+		return w.Write([]byte(strconv.FormatUint(uint64(value), 10)))
+	case uint64:
+		return w.Write([]byte(strconv.FormatUint(uint64(value), 10)))
+	case uint:
+		return w.Write([]byte(strconv.FormatUint(uint64(value), 10)))
 	case fmt.Stringer:
 		return w.Write([]byte(value.String()))
 	case TagFunc:
